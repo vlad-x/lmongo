@@ -5,7 +5,8 @@ var mongoose = require('mongoose'),
 	models = require('./models'),
 	async = require('async'),
 	mongodb = require('mongodb'),
-	ObjectID = mongodb.ObjectID
+	ObjectID = mongodb.ObjectID,
+	util = require('util')
 
 // connect to db
 mongoose.connect('mongodb://localhost/elmongo-test')
@@ -63,17 +64,40 @@ describe('elmongo plugin', function () {
 				mongoose.connection.collection('cats').insert(catObj, next)
 			},
 			syncCat: function (next) {
-				models.Cat.sync(next)
+				models.Cat.sync(function (err) {
+					return next()
+				})
 			},
+			refresh: exports.refresh,
 			searchCat: function (next) {
 				models.Cat.search({ query: 'nomnom' }, function (err, results) {
+					exports.assertErrNull(err)
+					
+					assert(results)
+					assert.equal(results.length, 1)
 
+					var firstResult = results[0]
+
+					assert(firstResult)
+					assert.equal(firstResult.name, 'nomnom')
+
+					return next()
 				})
 			}
 		}, done)
 	})
 
-	it.skip('after creating a cat model instance, it should show up in search', function (done) {
+	it('query with no matches should return empty array', function (done) {
+		models.Cat.search({ query: 'nothingShouldMatchThis' }, function (err, results) {
+			assert.equal(err, null)
+			assert(results)
+			assert.equal(results.length, 0, 'results.length !== 0: '+util.inspect(results, true, 10, true))
+
+			return done()
+		})
+	})
+
+	it('after creating a cat model instance, it should show up in search', function (done) {
 		var cat = new models.Cat({
 			name: 'simba'
 		})
@@ -85,13 +109,26 @@ describe('elmongo plugin', function () {
 			// refresh the index once the document is indexed (so it should be available for search)
 			exports.refresh(function () {
 				// search to make sure the cat got indexed
-				models.Cat.search({ query: 'simba' }, function (err, searchResults) {
-					assert.equal(err, null)
+				models.Cat.search({ query: 'simba' }, function (err, results) {
+					exports.assertErrNull(err)
 
-					console.log('searchResults', searchResults)
+					assert.equal(results.length, 1)
+					assert(results[0])
+					assert.equal(results[0].name, 'simba')
+
 					return done()
 				})
 			})
+		})
+	})
+
+	it('query with * should return 2 results', function (done) {
+		models.Cat.search({ query: '*' }, function (err, results) {
+			exports.assertErrNull(err)
+
+			assert.equal(results.length, 2)
+
+			return done()
 		})
 	})
 })
@@ -107,4 +144,8 @@ exports.refresh = function (cb) {
 		assert.equal(parsedBody.ok, true)
 		return cb()
 	})
+}
+
+exports.assertErrNull = function (err) {
+	assert.equal(err, null, 'err:'+util.inspect(err, true, 10, true))
 }
