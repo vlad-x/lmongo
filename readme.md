@@ -1,9 +1,9 @@
 #`elmongo`
 
-##The power of Search for your mongoose collections.
+##The Power of Search for Mongoose.
 
 
-`elmongo` is a mongoose plugin for keeping your collections up-to-date with elasticsearch. The result is amazing searchability across your collections, by giving your mongoose data all the search power of [elasticsearch](http://www.elasticsearch.org).
+`elmongo` is a [mongoose](http://mongoosejs.com/) plugin that integrates your data with [Elasticsearch](http://www.elasticsearch.org), to give you the full power of highly available, distributed search across your data.
 
 #Install
 
