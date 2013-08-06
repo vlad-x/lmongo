@@ -58,7 +58,7 @@ exports.saveDocs = function (docs, cb) {
 
 		doc.once('elmongo-indexed', function (esearchBody) {
 			if (!esearchBody || !esearchBody.ok) {
-				var error = new Error('elmongo-index error: '+esearchBody)
+				var error = new Error('elmongo-index error: '+util.inspect(esearchBody, true, 10, true))
 				error.esearchBody = esearchBody
 
 				return docNext(error)
@@ -93,7 +93,7 @@ exports.removeDocs = function (docs, cb) {
 
 		doc.once('elmongo-unindexed', function (esearchBody) {
 			if (!esearchBody || !esearchBody.ok) {
-				var error = new Error('elmongo-unindex error: '+esearchBody)
+				var error = new Error('elmongo-unindex error: '+util.inspect(esearchBody, true, 10, true))
 				error.esearchBody = esearchBody
 
 				return docNext(error)

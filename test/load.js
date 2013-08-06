@@ -35,6 +35,10 @@ describe('elmongo load tests', function () {
 
 					return next()
 				})
+			},
+			// need to make initial sync call so that indices are setup correctly
+			createIndex: function (next) {
+				models.Cat.sync(next)
 			}
 		}, done)
 	})
@@ -53,10 +57,17 @@ describe('elmongo load tests', function () {
 	it('insert 10K cats into the DB, reindexing while searching should keep returning results', function (done) {
 		var numDocs = 10*1000
 
+		// set timeout of 60s for this test
+		this.timeout(60*1000)
+
 		async.series({
 			insert10KCats: function (next) {
-				console.log('\nsaving %s docs to the DB', numDocs)
+				console.log('\nsaving %s documents to the DB', numDocs)
 				testHelper.insertNDocs(numDocs, models.Cat, next)
+			},
+			wait: function (next) {
+				// wait 3s for cluster update
+				setTimeout(next, 3000)
 			},
 			refresh: testHelper.refresh,
 			reindexWhileSearching: function (next) {
@@ -86,4 +97,7 @@ describe('elmongo load tests', function () {
 			}
 		}, done)
 	})
+
+	it('insert 10K cats into the DB, update them and make sure they are all updated in search results')
+
 })

@@ -10,6 +10,11 @@ var assert = require('assert'),
 
 var connStr = 'mongodb://localhost/elmongo-test'
 
+/**
+ * 
+ * Basic Model.sync() sanity test. Load tests for `.sync()` are done in load.js
+ * 
+ */
 describe('Model.sync()', function () {
 	before(function (done) {
 		async.series({
@@ -26,6 +31,18 @@ describe('Model.sync()', function () {
 					var parsedBody = JSON.parse(body)
 					assert.equal(parsedBody.ok, true)
 					assert.equal(parsedBody.status, 200)
+
+					return next()
+				})
+			},
+			clearCatIndex: function (next) {
+				request.del('http://localhost:9200/cats', function (err, res, body) {
+					testHelper.assertErrNull(err)
+
+					assert(body)
+
+					var parsedBody = JSON.parse(body)
+					assert.equal(parsedBody.ok, true)
 
 					return next()
 				})

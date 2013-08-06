@@ -120,7 +120,7 @@ describe('elmongo plugin', function () {
 		}, done)
 	})
 
-	it('creating a cat model instance and editing it should be reflected in Model.search()', function (done) {
+	it('creating a cat model instance and editing properties should be reflected in Model.search()', function (done) {
 
 		var testCat = null
 
@@ -148,13 +148,87 @@ describe('elmongo plugin', function () {
 					return next()
 				})
 			},
-			// update the age
-			updateAge: function (next) {
+			// update the `testCat` model
+			update: function (next) {
 				models.Cat.findById(testCat._id).exec(function (err, cat) {
 					assert.equal(err, null)
 
 					assert(cat)
 					cat.age = 7
+					cat.breed = 'bengal'
+
+					testHelper.saveDocs([ cat ], next)
+				})
+			},
+			wait: function (next) {
+				// wait 3s for age update
+				setTimeout(next, 3000)
+			},
+			refreshIndex: testHelper.refresh,
+			checkUpdates: function (next) {
+					models.Cat.search({ query: 'tolga', fields: [ 'name' ] }, function (err, results) {
+						assert.equal(err, null)
+
+						// console.log('results after update', results)
+
+						assert.equal(results.total, 1)
+						assert.equal(results.hits.length, 1)
+
+						var firstResult = results.hits[0]
+
+						assert(firstResult)
+						assert.equal(firstResult.name, 'Tolga')
+						assert.equal(firstResult.age, 7)
+						assert.equal(firstResult.breed, 'bengal')
+
+						return next()
+					})
+			},
+			cleanup: function (next) {
+				testHelper.removeDocs([ testCat ], next)
+			},
+			refreshIndex: testHelper.refresh
+		}, done)
+	})
+
+	it('creating a cat model instance and updating an array property should be reflected in Model.search()', function (done) {
+
+		var testCat = null
+
+		var testToys = [ 'scratcher', 'rubber duck' ];
+
+		async.series({
+			addCat: function (next) {
+				testCat = new models.Cat({
+					name: 'Tolga',
+					breed: 'turkish',
+					age: 5
+				})
+
+				testHelper.saveDocs([ testCat ], next)
+			},
+			refreshIndex: testHelper.refresh,
+			// search to make sure the cat got indexed
+			doSearch: function (next) {
+				models.Cat.search({ query: 'Tolga', fields: [ 'name' ] }, function (err, results) {
+					testHelper.assertErrNull(err)
+
+					assert.equal(results.total, 1)
+					assert.equal(results.hits.length, 1)
+					assert(results.hits[0])
+					assert.equal(results.hits[0].name, 'Tolga')
+
+					return next()
+				})
+			},
+			// update the model
+			update: function (next) {
+				models.Cat.findById(testCat._id).exec(function (err, cat) {
+					assert.equal(err, null)
+
+					assert(cat)
+					cat.toys = testToys
+					cat.markModified('toys')
 
 					testHelper.saveDocs([ cat ], next)
 				})
@@ -168,7 +242,7 @@ describe('elmongo plugin', function () {
 					models.Cat.search({ query: 'tolga', fields: [ 'name' ] }, function (err, results) {
 						assert.equal(err, null)
 
-						// console.log('results after age update', results)
+						// console.log('results after toys update', util.inspect(results, true, 10, true))
 
 						assert.equal(results.total, 1)
 						assert.equal(results.hits.length, 1)
@@ -177,7 +251,7 @@ describe('elmongo plugin', function () {
 
 						assert(firstResult)
 						assert.equal(firstResult.name, 'Tolga')
-						assert.equal(firstResult.age, 7)
+						assert.deepEqual(firstResult.toys, testToys)
 
 						return next()
 					})
