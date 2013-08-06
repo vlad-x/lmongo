@@ -5,6 +5,17 @@
 
 `elmongo` is a [mongoose](http://mongoosejs.com/) plugin that integrates your data with [Elasticsearch](http://www.elasticsearch.org), to give you the full power of highly available, distributed search across your data.
 
+If you have [homebrew](http://brew.sh/), you can install and run Elasticsearch with this one-liner:
+
+```
+brew install elasticsearch && elasticsearch
+```
+
+Or you can install Elasticsearch and run it in the background with this one-liner (assuming you have a `~/bin` directory):
+```
+curl http://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.1.zip -o temp-es.zip && unzip temp-es.zip && rm temp-es.zip && mv elasticsearch-0.90.1 ~/bin/elasticsearch && ~/bin/elasticsearch/bin/elasticsearch
+```
+
 #Install
 
 ```
@@ -37,19 +48,20 @@ Now your Cat schema has all the power of Elasticsearch. Here's how you can searc
 Cat.search({ query: 'simba' }, function (err, results) {
  	console.log('search results', results)
 })
-```
 
-You can perform a fuzzy search:
-```js
-Cat.search({ query: 'apple', fuzziness: 0.5 }, function (err, results) {
+// You can perform a fuzzy search:
+Cat.search({ query: '', fuzziness: 0.5 }, function (err, results) {
 	// ...
 })
-```
 
-You can paginate through the data:
-```js
+// Paginate through the data:
 Cat.search({ query: '*', page: 1, pageSize: 25 }, function (err, results) {
-  // ...
+ 	// ...
+})
+
+// You can use `where` clauses to filter the data
+Cat.search({ query: 'john', where: { age: 25, breed: 'siamese' } }, function (err, results) {
+	// ...
 })
 ```
 
@@ -59,7 +71,14 @@ After the initial `.sync()`, any `Cat` models you create/edit/delete with mongoo
 
 ##`Model.sync(callback)`
 
-Re-indexes your model's data in Elasticsearch. You can call this at any time and expect all your model's data to be available for search once `callback` is called. This is done with zero downtime, so you can keep making search queries even while `.sync()` is running.
+Re-indexes your collection's data in Elasticsearch. You can call this at any time and expect all your collection's data to be available for search once `callback` is called. This is done with zero downtime, so you can keep making search queries even while `.sync()` is running, and your data will be there.
+
+Example:
+```js
+Cat.sync(function (err) {
+	// all existing data in the `cats` collection is searchable now
+})
+```
 
 ##`Model.search(searchOptions, callback)`
 
@@ -68,8 +87,8 @@ Perform a search query on your model. Any values options you provide will overri
 ```js
 {
     query: '*',
-    fields: [ '_all' ],
-    fuzziness: 0.4,
+    fields: [ '_all' ],	// searches all fields by default
+    fuzziness: 0.0,
     pageSize: 25,
     page: 1
 }
@@ -77,14 +96,14 @@ Perform a search query on your model. Any values options you provide will overri
 
 ##`Model.plugin(elmongo[, options])`
 
-Takes an optional `options` object to tell `elmongo` the url that Elasticsearch is running at. In `options` you can specify:
+Gives your collection `search()` and `sync()` methods, and keeps Elasticsearch up-to-date with your data when you insert/edit/delete documents with mongoose. Takes an optional `options` object to tell `elmongo` the url that Elasticsearch is running at. In `options` you can specify:
 
  * `host` - the host that Elasticsearch is running on (defaults to `localhost`)
  * `port` - the port that Elasticsearch is listening on (defaults to `9200`)
 
 ##`elmongo.search(searchOptions, callback)`
 
-You can use this function to make searches that are not limited to a specific collection. You can use this to search across one or several collections at the same time (without making multiple roundtrips to Elasticsearch). The default options are the same as for `Model.search()`, with one extra key: `collections`. You can use it like so:
+You can use this function to make searches that are not limited to a specific collection. Use this to search across one or several collections at the same time (without making multiple roundtrips to Elasticsearch). The default options are the same as for `Model.search()`, with one extra key: `collections`. You can use it like so:
 
 ```js
 elmongo.search({ collections: [ 'cats', 'dogs' ], query: '*' }, function (err, results) {
@@ -92,11 +111,11 @@ elmongo.search({ collections: [ 'cats', 'dogs' ], query: '*' }, function (err, r
 })
 ```
 
-By default, `elmongo.search()` will use `localhost:9200` (the default Elasticsearch configuration). To configure it to hit a different address, use `elmongo.search.config(options)`.
+By default, `elmongo.search()` will use `localhost:9200` (the default Elasticsearch configuration). To configure it to use a different url, use `elmongo.search.config(options)`.
 
 ##`elmongo.search.config(options)`
 
-Configure the Elasticsearch url that `elmongo` uses to perform a search when `elmongo.search()` is used. This has no effect on the configuration for individual collections - to configure collections to use a different url than the default, use `Model.plugin()`.
+Configure the Elasticsearch url that `elmongo` uses to perform a search when `elmongo.search()` is used. This has no effect on the configuration for individual collections - to configure the url for collections, use `Model.plugin()`.
 
 Example:
 ```js

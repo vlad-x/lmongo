@@ -4,100 +4,92 @@ var mongoose = require('mongoose'),
 	assert = require('assert'),
 	models = require('./models'),
 	async = require('async'),
-	mongodb = require('mongodb'),
-	ObjectID = mongodb.ObjectID,
-	util = require('util')
+	util = require('util'),
+	elmongo = require('../lib/elmongo'),
+	testHelper = require('./helper')
 
-// connect to db
-mongoose.connect('mongodb://localhost/elmongo-test')
+// connect to DB
+var connStr = 'mongodb://localhost/elmongo-test'
 
 describe('elmongo plugin', function () {
+
 	before(function (done) {
-		// make sure elasticsearch is running
-		request('http://localhost:9200', function (err, res, body) {
-			assert.equal(err, null)
-			assert(body)
+		async.series({
+			connectMongo: function (next) {
+				mongoose.connect(connStr, next)
+			},
+			dropCollections: testHelper.dropCollections,
+			checkSearchRunning: function (next) {
+				// make sure elasticsearch is running
+				request('http://localhost:9200', function (err, res, body) {
+					assert.equal(err, null)
+					assert(body)
 
-			var parsedBody = JSON.parse(body)
-			assert.equal(parsedBody.ok, true)
-			assert.equal(parsedBody.status, 200)
+					var parsedBody = JSON.parse(body)
+					assert.equal(parsedBody.ok, true)
+					assert.equal(parsedBody.status, 200)
 
-			return done()
-		})
+					return next()
+				})
+			},
+			syncCats: function (next) {
+				models.Cat.sync(next)
+			},
+			waitForYellowStatus: testHelper.waitForYellowStatus,
+			insertCats: function (next) {
+				var testCats = [];
+
+				testCats[0] = new models.Cat({
+					name: 'Puffy',
+					breed: 'siamese',
+					age: 10
+				})
+
+				testCats[1] = new models.Cat({
+					name: 'Mango',
+					breed: 'siamese',
+					age: 15
+				})
+
+				testCats[2] = new models.Cat({
+					name: 'Siamese',
+					breed: 'persian',
+					age: 12
+				})
+
+				testHelper.insertDocs(testCats, next)
+			},
+			refreshIndex: testHelper.refresh
+		}, done)
 	})
 
 	after(function (done) {
 		async.series({
-			dropCollections: function (next) {
-				var deletionFns = Object.keys(models).map(function (modelName) {
-					var model = models[modelName];
-
-					return function (modelNext) {
-						model.remove({}, modelNext)
-					}
-				})
-
-				async.parallel(deletionFns, next)
-			},
-			refreshIndex: exports.refresh
-		}, done)
-	})
-
-	it('initial request on /index/cat should receive `No handler` message from elasticsearch', function (done) {
-		request('http://localhost:9200/index/cat', function (err, res, body) {
-			assert.equal(err, null)
-			assert.equal(body, 'No handler found for uri [/index/cat] and method [GET]')
-			
-			return done()
-		})
-	})
-
-	it('inserting a `cat` model directly using mongodb driver should show up in search after .sync is called', function (done) {
-
-		var catObj = {
-			name: 'nomnom',
-			_id: new ObjectID()
-		}
-
-		async.series({
-			insertCat: function (next) {
-				mongoose.connection.collection('cats').insert(catObj, next)
-			},
-			syncCat: function (next) {
-				models.Cat.sync(function (err) {
-					return next()
-				})
-			},
-			refresh: exports.refresh,
-			searchCat: function (next) {
-				models.Cat.search({ query: 'nomnom' }, function (err, results) {
-					exports.assertErrNull(err)
-					
-					assert(results)
-					assert.equal(results.length, 1)
-
-					var firstResult = results[0]
-
-					assert(firstResult)
-					assert.equal(firstResult.name, 'nomnom')
-
-					return next()
-				})
+			dropCollections: testHelper.dropCollections,
+			refreshIndex: testHelper.refresh,
+			disconnectMongo: function (next) {
+				mongoose.disconnect()
+				return next()
 			}
 		}, done)
 	})
 
-	it('query with no matches should return empty array', function (done) {
+	it('Model.search() query with no matches should return empty array', function (done) {
 		models.Cat.search({ query: 'nothingShouldMatchThis' }, function (err, results) {
 			assert.equal(err, null)
 			assert(results)
-			assert.equal(results.length, 0, 'results.length !== 0: '+util.inspect(results, true, 10, true))
+
+			if (results.hits.length || results.hits.total) console.log('results', util.inspect(results, true, 10, true))
+
+			assert.equal(results.total, 0)
+			assert.equal(results.hits.length, 0)
 
 			return done()
 		})
 	})
 
-	it('after creating a cat model instance, it should show up in search', function (done) {
+	it('after creating a cat model instance, it should show up in Model.search()', function (done) {
+
 		var cat = new models.Cat({
 			name: 'simba'
 		})
@@ -107,14 +99,15 @@ describe('elmongo plugin', function () {
 
 		cat.on('elmongo-indexed', function (esearchBody) {
 			// refresh the index once the document is indexed (so it should be available for search)
-			exports.refresh(function () {
+			testHelper.refresh(function () {
 				// search to make sure the cat got indexed
 				models.Cat.search({ query: 'simba' }, function (err, results) {
-					exports.assertErrNull(err)
+					testHelper.assertErrNull(err)
 
-					assert.equal(results.length, 1)
-					assert(results[0])
-					assert.equal(results[0].name, 'simba')
+					assert.equal(results.total, 1)
+					assert.equal(results.hits.length, 1)
+					assert(results.hits[0])
+					assert.equal(results.hits[0].name, 'simba')
 
 					return done()
 				})
@@ -122,30 +115,135 @@ describe('elmongo plugin', function () {
 		})
 	})
 
-	it('query with * should return 2 results', function (done) {
+	it('Model.search() with * should return all results', function (done) {
 		models.Cat.search({ query: '*' }, function (err, results) {
-			exports.assertErrNull(err)
+			testHelper.assertErrNull(err)
 
-			assert.equal(results.length, 2)
+			assert.equal(results.total, 3)
+			assert.equal(results.hits.length, 3)
 
 			return done()
 		})
 	})
-})
 
-/**
- * Force a refresh on all indices so we an expect elasticsearch to be up-to-date
- * @param  {Function} cb - Completion callback
- */
-exports.refresh = function (cb) {
-	request('http://localhost:9200/_refresh', function (err, res, body) {
-		assert.equal(err, null)
-		var parsedBody = JSON.parse(body)
-		assert.equal(parsedBody.ok, true)
-		return cb()
+	it('elmongo.search() with * should return all results', function (done) {
+		elmongo.search({ query: '*', collections: [ 'cats' ] }, function (err, results) {
+			testHelper.assertErrNull(err)
+
+			assert.equal(results.total, 3)
+			assert.equal(results.hits.length, 3)
+
+			return done()
+		})
 	})
-}
 
-exports.assertErrNull = function (err) {
-	assert.equal(err, null, 'err:'+util.inspect(err, true, 10, true))
-}
+	it('elmongo.search.config() then elmongo.search with * should return all results', function (done) {
+		elmongo.search.config({ host: '127.0.0.1', port: 9200 })
+
+		elmongo.search({ query: '*', collections: [ 'cats' ] }, function (err, results) {
+			testHelper.assertErrNull(err)
+
+			assert.equal(results.total, 3)
+			assert.equal(results.hits.length, 3)
+
+			return done()
+		})
+	})
+
+	it('Model.search() with fuzziness 0.5 should return results for `ismba`', function (done) {
+		models.Cat.search({ query: 'ismba', fuzziness: 0.5 }, function (err, results) {
+			testHelper.assertErrNull(err)
+
+			assert.equal(results.total, 1)
+			assert.equal(results.hits.length, 1)
+
+			var firstResult = results.hits[0]
+
+			assert(firstResult)
+			assert.equal(firstResult.name, 'simba')
+
+			return done()
+		})
+	})
+
+	it('Model.search() with fields returns only results that match on that field', function (done) {
+		models.Cat.search({ query: 'Siamese', fields: [ 'name' ] }, function (err, results) {
+			testHelper.assertErrNull(err)
+
+			assert.equal(results.total, 1)
+			assert.equal(results.hits.length, 1)
+
+			var firstResult = results.hits[0]
+
+			assert(firstResult)
+			assert.equal(firstResult.name, 'Siamese')
+			assert.equal(firstResult.breed, 'persian')
+
+			return done()
+		})
+	})
+
+	it('Model.search() with basic where clause returns results', function (done) {
+		var searchOpts = {
+			query: '*',
+			where: {
+				age: 10
+			}
+		}
+
+		models.Cat.search(searchOpts, function (err, results) {
+			testHelper.assertErrNull(err)
+
+			console.log('results', results)
+
+			assert.equal(results.total, 1)
+			assert.equal(results.hits.length, 1)
+
+			var firstResult = results.hits[0]
+
+			assert(firstResult)
+			assert.equal(firstResult.age, 10)
+
+			return done()
+		})
+	})
+
+	it('Model.search() with 3 where clauses returns correct results', function (done) {
+		var searchOpts = {
+			query: '*',
+			where: {
+				age: 15,
+				breed: 'siamese',
+				name: 'Mango'
+			}
+		}
+
+		models.Cat.search(searchOpts, function (err, results) {
+			testHelper.assertErrNull(err)
+
+			console.log('results', results)
+
+			assert.equal(results.total, 1)
+			assert.equal(results.hits.length, 1)
+
+			var firstResult = results.hits[0]
+
+			assert(firstResult)
+			assert.equal(firstResult.age, 15)
+			assert.equal(firstResult.breed, 'siamese')
+			assert.equal(firstResult.name, 'Mango')
+
+			return done()
+		})
+	})
+
+	it('Model.search() with `not` clause returns results')
+
+	it('Model.search() with where `or` clause returns results')
+
+	it('Model.search() with where `in` clause returns results')
+
+	it('Model.search() with where `gt` clause returns results')
+
+	it('Model.search() with where `lt` clause returns results')
+})

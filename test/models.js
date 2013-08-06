@@ -13,14 +13,15 @@ var mongoose = require('mongoose'),
 
 var Cat = new Schema({
 	name: { type: String },
+	age: { type: Number },
+	breed: { type: String },
 	owner: { type: ObjectId, ref: 'Person' }
 })
 
 Cat.plugin(elmongo)
 
 var Person = new Schema({
-	firstName: { type: String },
-	lastName: { type: String },
+	name: { type: String },
 	email: { type: String }
 })
 
