@@ -76,6 +76,41 @@ exports.insertDocs = function (docs, cb) {
 }
 
 /**
+ * Remove a Mongoose document, or an Array of them, call `cb` on completion.
+ * 
+ * @param  {Array|Object}   docs
+ * @param  {Function} cb
+ */
+exports.removeDocs = function (docs, cb) {
+	if (!Array.isArray(docs)) {
+		docs = [ docs ]
+	}
+
+	async.each(docs, function (doc, docNext) {
+		if (!doc.remove) {
+			return docNext(new Error('Invalid argument: `docs` is expected to be a Mongoose document, or array of them'))
+		}
+
+		doc.remove(function (err) {
+			if (err) { 
+				return cb(err)
+			}
+
+			doc.on('elmongo-unindexed', function (esearchBody) {
+				if (!esearchBody || !esearchBody.ok) {
+					var error = new Error('elmongo-unindex error: '+esearchBody)
+					error.esearchBody = esearchBody
+
+					return docNext(error)
+				}
+				
+				return docNext()
+			})
+		})
+	}, cb)
+}
+
+/**
  * Insert `n` instances of `model` into the DB, call `cb` on completion.
  * @param  {Number}   n
  * @param  {Object}   model
