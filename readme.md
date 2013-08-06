@@ -65,7 +65,7 @@ Cat.search({ query: 'john', where: { age: 25, breed: 'siamese' } }, function (er
 })
 ```
 
-After the initial `.sync()`, any `Cat` models you create/edit/delete with mongoose will be up-to-date in Elasticsearch. Also, elmongo reindexes with zero downtime. This means that your data will always be available in Elasticsearch even if you're in the middle of reindexing.
+After the initial `.sync()`, any `Cat` models you create/edit/delete with mongoose will be up-to-date in Elasticsearch. Also, `elmongo` reindexes with zero downtime. This means that your data will always be available in Elasticsearch even if you're in the middle of reindexing.
 
 #API
 
@@ -96,7 +96,7 @@ Perform a search query on your model. Any values options you provide will overri
 
 ##`Model.plugin(elmongo[, options])`
 
-Gives your collection `search()` and `sync()` methods, and keeps Elasticsearch up-to-date with your data when you insert/edit/delete documents with mongoose. Takes an optional `options` object to tell `elmongo` the url that Elasticsearch is running at. In `options` you can specify:
+Gives your collection `.search()` and `.sync()` methods, and keeps Elasticsearch up-to-date with your data when you insert/edit/delete documents with mongoose. Takes an optional `options` object to tell `elmongo` the url that Elasticsearch is running at. In `options` you can specify:
 
  * `host` - the host that Elasticsearch is running on (defaults to `localhost`)
  * `port` - the port that Elasticsearch is listening on (defaults to `9200`)
@@ -137,7 +137,7 @@ npm test
 
 (The MIT License)
 
-Copyright (c) by Tolga Tezel <tolgatezel11@gmail.com>
+Copyright (c) by Sold. <tolga@usesold.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
