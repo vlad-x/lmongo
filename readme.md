@@ -49,17 +49,17 @@ Cat.search({ query: 'simba' }, function (err, results) {
  	console.log('search results', results)
 })
 
-// You can perform a fuzzy search:
+// Perform a fuzzy search
 Cat.search({ query: '', fuzziness: 0.5 }, function (err, results) {
 	// ...
 })
 
-// Paginate through the data:
+// Paginate through the data
 Cat.search({ query: '*', page: 1, pageSize: 25 }, function (err, results) {
  	// ...
 })
 
-// You can use `where` clauses to filter the data
+// Use `where` clauses to filter the data
 Cat.search({ query: 'john', where: { age: 25, breed: 'siamese' } }, function (err, results) {
 	// ...
 })
