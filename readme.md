@@ -36,21 +36,21 @@ var Cat = new Schema({
 Cat.plugin(elmongo)
 ```
 
-Add your existing data to the search index:
+Now add your existing data to the search index:
 ```js
 Cat.sync(function (err) {
   // all cats are now searchable in elasticsearch
 })
 ```
 
-Now your Cat schema has all the power of Elasticsearch. Here's how you can search on the model:
+At this point your Cat schema has all the power of Elasticsearch. Here's how you can search on the model:
 ```js
 Cat.search({ query: 'simba' }, function (err, results) {
  	console.log('search results', results)
 })
 
 // Perform a fuzzy search
-Cat.search({ query: '', fuzziness: 0.5 }, function (err, results) {
+Cat.search({ query: 'Sphinxx', fuzziness: 0.5 }, function (err, results) {
 	// ...
 })
 
