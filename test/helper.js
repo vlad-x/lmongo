@@ -15,7 +15,7 @@ var assert = require('assert'),
  * @param  {Function} cb
  */
 exports.refresh = function (cb) {
-	request('http://localhost:9200/_refresh', function (err, res, body) {
+	request.post('http://localhost:9200/_refresh', function (err, res, body) {
 		assert.equal(err, null)
 		var parsedBody = JSON.parse(body)
 		assert.equal(parsedBody.ok, true)
@@ -41,12 +41,12 @@ exports.assertErrNull = function (err) {
 }
 
 /**
- * Insert a Mongoose document, or an Array of them, call `cb` on completion.
+ * Save a Mongoose document, or an Array of them, call `cb` on completion.
  * 
  * @param  {Array|Object}   docs
  * @param  {Function} cb
  */
-exports.insertDocs = function (docs, cb) {
+exports.saveDocs = function (docs, cb) {
 	if (!Array.isArray(docs)) {
 		docs = [ docs ]
 	}
@@ -56,21 +56,21 @@ exports.insertDocs = function (docs, cb) {
 			return docNext(new Error('Invalid argument: `docs` is expected to be a Mongoose document, or array of them'))
 		}
 
+		doc.once('elmongo-indexed', function (esearchBody) {
+			if (!esearchBody || !esearchBody.ok) {
+				var error = new Error('elmongo-index error: '+esearchBody)
+				error.esearchBody = esearchBody
+
+				return docNext(error)
+			}
+			
+			return docNext()
+		})
+
 		doc.save(function (err) {
 			if (err) { 
-				return cb(err)
+				return docNext(err)
 			}
-
-			doc.on('elmongo-indexed', function (esearchBody) {
-				if (!esearchBody || !esearchBody.ok) {
-					var error = new Error('elmongo-index error: '+esearchBody)
-					error.esearchBody = esearchBody
-
-					return docNext(error)
-				}
-				
-				return docNext()
-			})
 		})
 	}, cb)
 }
@@ -91,21 +91,21 @@ exports.removeDocs = function (docs, cb) {
 			return docNext(new Error('Invalid argument: `docs` is expected to be a Mongoose document, or array of them'))
 		}
 
+		doc.once('elmongo-unindexed', function (esearchBody) {
+			if (!esearchBody || !esearchBody.ok) {
+				var error = new Error('elmongo-unindex error: '+esearchBody)
+				error.esearchBody = esearchBody
+
+				return docNext(error)
+			}
+			
+			return docNext()
+		})
+
 		doc.remove(function (err) {
 			if (err) { 
-				return cb(err)
+				return docNext(err)
 			}
-
-			doc.on('elmongo-unindexed', function (esearchBody) {
-				if (!esearchBody || !esearchBody.ok) {
-					var error = new Error('elmongo-unindex error: '+esearchBody)
-					error.esearchBody = esearchBody
-
-					return docNext(error)
-				}
-				
-				return docNext()
-			})
 		})
 	}, cb)
 }
@@ -127,7 +127,7 @@ exports.insertNDocs = function (n, model, cb) {
 		modelsToSave.push(instance)
 	}
 
-	exports.insertDocs(modelsToSave, cb)
+	exports.saveDocs(modelsToSave, cb)
 }
 
 /**
