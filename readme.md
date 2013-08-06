@@ -103,7 +103,7 @@ Gives your collection `search()` and `sync()` methods, and keeps Elasticsearch u
 
 ##`elmongo.search(searchOptions, callback)`
 
-You can use this function to make searches that are not limited to a specific collection. Use this to search across one or several collections at the same time (without making multiple roundtrips to Elasticsearch). The default options are the same as for `Model.search()`, with one extra key: `collections`. You can use it like so:
+You can use this function to make searches that are not limited to a specific collection. Use this to search across one or several collections at the same time (without making multiple roundtrips to Elasticsearch). The default options are the same as for `Model.search()`, with one extra key: `collections`. It defaults to searching all collections, but you can specify an array of collections to search on.
 
 ```js
 elmongo.search({ collections: [ 'cats', 'dogs' ], query: '*' }, function (err, results) {
