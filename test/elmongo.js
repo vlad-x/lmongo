@@ -11,7 +11,7 @@ var mongoose = require('mongoose'),
 // connect to DB
 var connStr = 'mongodb://localhost/elmongo-test'
 
-describe.only('elmongo plugin', function () {
+describe('elmongo plugin', function () {
 
 	before(function (done) {
 		async.series({
@@ -57,7 +57,7 @@ describe.only('elmongo plugin', function () {
 					age: 12
 				})
 
-				testHelper.insertDocs(testCats, next)
+				testHelper.saveDocs(testCats, next)
 			},
 			refreshIndex: testHelper.refresh
 		}, done)
@@ -65,7 +65,6 @@ describe.only('elmongo plugin', function () {
 
 	after(function (done) {
 		async.series({
-			dropCollections: testHelper.dropCollections,
 			refreshIndex: testHelper.refresh,
 			disconnectMongo: function (next) {
 				mongoose.disconnect()
@@ -98,7 +97,7 @@ describe.only('elmongo plugin', function () {
 					name: 'simba'
 				})
 
-				testHelper.insertDocs([ testCat ], next)
+				testHelper.saveDocs([ testCat ], next)
 			},
 			refreshIndex: testHelper.refresh,
 			doSearch: function (next) {
@@ -113,6 +112,75 @@ describe.only('elmongo plugin', function () {
 
 					return next()
 				})
+			},
+			cleanup: function (next) {
+				testHelper.removeDocs([ testCat ], next)
+			},
+			refreshIndex: testHelper.refresh
+		}, done)
+	})
+
+	it('creating a cat model instance and editing it should be reflected in Model.search()', function (done) {
+
+		var testCat = null
+
+		async.series({
+			addCat: function (next) {
+				testCat = new models.Cat({
+					name: 'Tolga',
+					breed: 'turkish',
+					age: 5
+				})
+
+				testHelper.saveDocs([ testCat ], next)
+			},
+			refreshIndex: testHelper.refresh,
+			// search to make sure the cat got indexed
+			doSearch: function (next) {
+				models.Cat.search({ query: 'Tolga', fields: [ 'name' ] }, function (err, results) {
+					testHelper.assertErrNull(err)
+
+					assert.equal(results.total, 1)
+					assert.equal(results.hits.length, 1)
+					assert(results.hits[0])
+					assert.equal(results.hits[0].name, 'Tolga')
+
+					return next()
+				})
+			},
+			// update the age
+			updateAge: function (next) {
+				models.Cat.findById(testCat._id).exec(function (err, cat) {
+					assert.equal(err, null)
+
+					assert(cat)
+					cat.age = 7
+
+					testHelper.saveDocs([ cat ], next)
+				})
+			},
+			wait: function (next) {
+				// wait 3s for age update
+				setTimeout(next, 3000)
+			},
+			refreshIndex: testHelper.refresh,
+			checkAge: function (next) {
+					models.Cat.search({ query: 'tolga', fields: [ 'name' ] }, function (err, results) {
+						assert.equal(err, null)
+
+						// console.log('results after age update', results)
+
+						assert.equal(results.total, 1)
+						assert.equal(results.hits.length, 1)
+
+						var firstResult = results.hits[0]
+
+						assert(firstResult)
+						assert.equal(firstResult.name, 'Tolga')
+						assert.equal(firstResult.age, 7)
+
+						return next()
+					})
 			},
 			cleanup: function (next) {
 				testHelper.removeDocs([ testCat ], next)
