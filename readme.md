@@ -65,7 +65,7 @@ Cat.search({ query: 'john', where: { age: 25, breed: 'siamese' } }, function (er
 })
 ```
 
-After the initial `.sync()`, any `Cat` models you create/edit/delete with mongoose will be up-to-date in Elasticsearch. Also, elmongo reindexes with zero downtime. This means that your data will always be available in elasticsearch even if you're in the middle of reindexing.
+After the initial `.sync()`, any `Cat` models you create/edit/delete with mongoose will be up-to-date in Elasticsearch. Also, elmongo reindexes with zero downtime. This means that your data will always be available in Elasticsearch even if you're in the middle of reindexing.
 
 #API
 
