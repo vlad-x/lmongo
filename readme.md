@@ -1,6 +1,6 @@
 #`elmongo`
 
-##The Power of Search for Mongoose.
+##The Power of Elasticsearch for Mongoose.
 
 
 `elmongo` is a [mongoose](http://mongoosejs.com/) plugin that integrates your data with [Elasticsearch](http://www.elasticsearch.org), to give you the full power of highly available, distributed search across your data.
