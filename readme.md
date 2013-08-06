@@ -88,7 +88,7 @@ Perform a search query on your model. Any values options you provide will overri
 {
     query: '*',
     fields: [ '_all' ],	// searches all fields by default
-    fuzziness: 0.0,
+    fuzziness: 0.0,		// exact match by default
     pageSize: 25,
     page: 1
 }
