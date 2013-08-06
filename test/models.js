@@ -15,6 +15,7 @@ var Cat = new Schema({
 	name: { type: String },
 	age: { type: Number },
 	breed: { type: String },
+	toys: [ { type: String } ],
 	owner: { type: ObjectId, ref: 'Person' }
 })
 
