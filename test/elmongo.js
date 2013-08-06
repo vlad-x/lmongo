@@ -11,7 +11,7 @@ var mongoose = require('mongoose'),
 // connect to DB
 var connStr = 'mongodb://localhost/elmongo-test'
 
-describe('elmongo plugin', function () {
+describe.only('elmongo plugin', function () {
 
 	before(function (done) {
 		async.series({
@@ -90,16 +90,18 @@ describe('elmongo plugin', function () {
 
 	it('after creating a cat model instance, it should show up in Model.search()', function (done) {
 
-		var cat = new models.Cat({
-			name: 'simba'
-		})
-		cat.save(function (err) {
-			assert.equal(err, null)
-		})
+		var testCat = null
 
-		cat.on('elmongo-indexed', function (esearchBody) {
-			// refresh the index once the document is indexed (so it should be available for search)
-			testHelper.refresh(function () {
+		async.series({
+			addCat: function (next) {
+				testCat = new models.Cat({
+					name: 'simba'
+				})
+
+				testHelper.insertDocs([ testCat ], next)
+			},
+			refreshIndex: testHelper.refresh,
+			doSearch: function (next) {
 				// search to make sure the cat got indexed
 				models.Cat.search({ query: 'simba' }, function (err, results) {
 					testHelper.assertErrNull(err)
@@ -109,21 +111,31 @@ describe('elmongo plugin', function () {
 					assert(results.hits[0])
 					assert.equal(results.hits[0].name, 'simba')
 
-					return done()
+					return next()
 				})
-			})
-		})
+			},
+			cleanup: function (next) {
+				testHelper.removeDocs([ testCat ], next)
+			},
+			refreshIndex: testHelper.refresh
+		}, done)
 	})
 
 	it('Model.search() with * should return all results', function (done) {
-		models.Cat.search({ query: '*' }, function (err, results) {
-			testHelper.assertErrNull(err)
 
-			assert.equal(results.total, 3)
-			assert.equal(results.hits.length, 3)
+		setTimeout(function () {
 
-			return done()
-		})
+			models.Cat.search({ query: '*' }, function (err, results) {
+				testHelper.assertErrNull(err)
+
+				assert.equal(results.total, 3)
+				assert.equal(results.hits.length, 3)
+
+				return done()
+			})
+
+
+		}, 5000)
 	})
 
 	it('elmongo.search() with * should return all results', function (done) {
@@ -151,7 +163,7 @@ describe('elmongo plugin', function () {
 	})
 
 	it('Model.search() with fuzziness 0.5 should return results for `ismba`', function (done) {
-		models.Cat.search({ query: 'ismba', fuzziness: 0.5 }, function (err, results) {
+		models.Cat.search({ query: 'Mangoo', fuzziness: 0.5 }, function (err, results) {
 			testHelper.assertErrNull(err)
 
 			assert.equal(results.total, 1)
@@ -160,7 +172,7 @@ describe('elmongo plugin', function () {
 			var firstResult = results.hits[0]
 
 			assert(firstResult)
-			assert.equal(firstResult.name, 'simba')
+			assert.equal(firstResult.name, 'Mango')
 
 			return done()
 		})
@@ -194,8 +206,6 @@ describe('elmongo plugin', function () {
 		models.Cat.search(searchOpts, function (err, results) {
 			testHelper.assertErrNull(err)
 
-			console.log('results', results)
-
 			assert.equal(results.total, 1)
 			assert.equal(results.hits.length, 1)
 
@@ -220,8 +230,6 @@ describe('elmongo plugin', function () {
 
 		models.Cat.search(searchOpts, function (err, results) {
 			testHelper.assertErrNull(err)
-
-			console.log('results', results)
 
 			assert.equal(results.total, 1)
 			assert.equal(results.hits.length, 1)
