@@ -27,6 +27,6 @@
     "url": "http://github.com/ttezel/elmongo.git"
   },
   "scripts": {
-    "test": "./node_modules/.bin/mocha -t 30000 -R spec"
+    "test": "./node_modules/.bin/mocha -t 90000 -R spec"
   }
 }
