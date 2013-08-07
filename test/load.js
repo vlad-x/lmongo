@@ -110,6 +110,9 @@ describe('elmongo load tests', function () {
 		// set timeout of 60s for this test
 		this.timeout(60*1000)
 
+		// keep a cache of updated cat info to check that elasticsearch has the updated info
+		var catUpdateCache = {}
+
 		async.series({
 			insert10KCats: function (next) {
 				console.log('\nsaving %s documents to the DB', numDocs)
@@ -120,29 +123,70 @@ describe('elmongo load tests', function () {
 				setTimeout(next, 3000)
 			},
 			refresh: testHelper.refresh,
-			reindexWhileSearching: function (next) {
-				var searchesPassed = 0
+			// update all 10K cats in the DB
+			update10KCats: function (next) {
 
-				// perform a search query every 50ms during reindexing
-				var interval = setInterval(function () {
-					models.Cat.search({ query: '*', pageSize: 25 }, function (err, results) {
-						testHelper.assertErrNull(err)
+				models
+				.Cat
+				.find()
+				.exec(function (err, cats) {
+					assert.equal(err, null)
+					assert.equal(cats.length, numDocs)
 
-						assert.equal(results.total, 10000)
-						assert.equal(results.hits.length, 25)
-						searchesPassed++
-					})
-				}, 50)
+					var i = 0
+					var updated = 0
 
-				// kick off reindexing while searches are being performed
-				models.Cat.sync(function (err) {
+					async.each(cats, function (cat, catNext) {
+						cat.name = 'cat-update-'+i
+						i++
+
+						catUpdateCache[cat.id] = {
+							name: cat.name
+						}
+
+						testHelper.saveDocs(cat, function (err) {
+							updated++
+
+							if (!(updated%100))
+								console.log('updated %s cats', updated)
+
+							return catNext()
+						})
+
+					}, next)
+				})
+			},
+			firstRefresh: testHelper.refresh,
+			wait: function (next) {
+				// wait for cluster update
+				setTimeout(next, 10*1000)
+			},
+			secondRefresh: testHelper.refresh,
+			search10KCats: function (next) {
+
+				models
+				.Cat
+				.search({ query: '*', page: 1, pageSize: numDocs }, function (err, results) {
 					testHelper.assertErrNull(err)
 
-					clearInterval(interval)
+					assert.equal(results.total, numDocs)
+					assert.equal(results.hits.length, numDocs)
 
-					console.log('performed %s successful searches during reindexing', searchesPassed)
+					results.hits.forEach(function (hit) {
+						assert(hit._id)
 
-					return next()
+						if (!catUpdateCache[hit._id]) {
+							console.log('search result not found in catCache. search result:', util.inspect(hit, true, 10, true))
+						}
+
+						assert(catUpdateCache[hit._id])
+						assert.equal(catUpdateCache[hit._id].name, hit.name)
+
+						// delete the `catCache` entry for this hit, so we will error out if we have duplicate search results
+						delete catUpdateCache[hit._id]
+					})
+
+					return next()				
 				})
 			}
 		}, done)
