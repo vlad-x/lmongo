@@ -82,7 +82,7 @@ Cat.sync(function (err) {
 
 ##`Model.search(searchOptions, callback)`
 
-Perform a search query on your model. Any values options you provide will override the default search options. The default options are:
+Perform a search query on your model. Any values you provide will override the default search options. The default options are:
 
 ```js
 {
