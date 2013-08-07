@@ -24,7 +24,7 @@
   "main": "./lib/elmongo",
   "repository": {
     "type": "git",
-    "url": "http://github.com/ttezel/elmongo.git"
+    "url": "http://github.com/usesold/elmongo.git"
   },
   "scripts": {
     "test": "./node_modules/.bin/mocha -t 90000 -R spec"
