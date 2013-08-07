@@ -11,7 +11,15 @@ var mongoose = require('mongoose'),
 // connect to DB
 var connStr = 'mongodb://localhost/elmongo-test'
 
+/**
+ * 
+ * Basic tests for Elmongo functionality - load tests are done in load.js
+ * 
+ */
 describe('elmongo plugin', function () {
+
+	// array of test cat models that tests in this suite share
+	var testCats = [];
 
 	before(function (done) {
 		async.series({
@@ -37,7 +45,6 @@ describe('elmongo plugin', function () {
 			},
 			waitForYellowStatus: testHelper.waitForYellowStatus,
 			insertCats: function (next) {
-				var testCats = [];
 
 				testCats[0] = new models.Cat({
 					name: 'Puffy',
@@ -270,8 +277,8 @@ describe('elmongo plugin', function () {
 			models.Cat.search({ query: '*' }, function (err, results) {
 				testHelper.assertErrNull(err)
 
-				assert.equal(results.total, 3)
-				assert.equal(results.hits.length, 3)
+				assert.equal(results.total, testCats.length)
+				assert.equal(results.hits.length, testCats.length)
 
 				return done()
 			})
@@ -284,8 +291,8 @@ describe('elmongo plugin', function () {
 		elmongo.search({ query: '*', collections: [ 'cats' ] }, function (err, results) {
 			testHelper.assertErrNull(err)
 
-			assert.equal(results.total, 3)
-			assert.equal(results.hits.length, 3)
+			assert.equal(results.total, testCats.length)
+			assert.equal(results.hits.length, testCats.length)
 
 			return done()
 		})
@@ -297,14 +304,14 @@ describe('elmongo plugin', function () {
 		elmongo.search({ query: '*', collections: [ 'cats' ] }, function (err, results) {
 			testHelper.assertErrNull(err)
 
-			assert.equal(results.total, 3)
-			assert.equal(results.hits.length, 3)
+			assert.equal(results.total, testCats.length)
+			assert.equal(results.hits.length, testCats.length)
 
 			return done()
 		})
 	})
 
-	it('Model.search() with fuzziness 0.5 should return results for `ismba`', function (done) {
+	it('Model.search() with fuzziness 0.5 should return results for `Mangoo`', function (done) {
 		models.Cat.search({ query: 'Mangoo', fuzziness: 0.5 }, function (err, results) {
 			testHelper.assertErrNull(err)
 
@@ -315,6 +322,23 @@ describe('elmongo plugin', function () {
 
 			assert(firstResult)
 			assert.equal(firstResult.name, 'Mango')
+
+			return done()
+		})
+	})
+
+	it('Model.search() with fuzziness 0.5 and with fields should return fuzzy matches for that field', function (done) {
+		models.Cat.search({ query: 'siameez', fuzziness: 0.5, fields: [ 'breed'] }, function (err, results) {
+			testHelper.assertErrNull(err)
+
+			var siameseTestCats = testCats.filter(function (testCat) { return testCat.breed === 'siamese' })
+
+			assert.equal(results.total, siameseTestCats.length)
+			assert.equal(results.hits.length, siameseTestCats.length)
+
+			assert(results.hits.every(function (hit) {
+				return hit.breed === 'siamese'
+			}))
 
 			return done()
 		})
@@ -387,7 +411,30 @@ describe('elmongo plugin', function () {
 		})
 	})
 
-	it('Model.search() with `not` clause returns results')
+	it.skip('Model.search() with `not` clause returns correct results', function (done) {
+		var searchOpts = {
+			query: '*',
+			where: { age: { not: 10 } }
+		}
+
+		var numTestCatsExpected = testCats.filter(function (testCat) { return testCat.age !== 10 }).length
+
+		models.Cat.search(searchOpts, function (err, results) {
+			testHelper.assertErrNull(err)
+
+			assert.equal(results.total, 1)
+			assert.equal(results.hits.length, 1)
+
+			var firstResult = results.hits[0]
+
+			assert(firstResult)
+			assert.equal(firstResult.age, 15)
+			assert.equal(firstResult.breed, 'siamese')
+			assert.equal(firstResult.name, 'Mango')
+
+			return done()
+		})
+	})
 
 	it('Model.search() with where `or` clause returns results')
 

@@ -15,6 +15,11 @@ var mongoose = require('mongoose'),
 
 var connStr = 'mongodb://localhost/elmongo-test'
 
+/**
+ * 
+ * Elmongo load tests - ensure functionality and correctness during mass inserts, updates and re-indexing
+ * 
+ */
 describe('elmongo load tests', function () {
 
 	before(function (done) {
