@@ -24,7 +24,9 @@ exports.refresh = function (cb) {
 }
 
 exports.waitForYellowStatus = function (cb) {
+	console.log('waiting for yellow cluster status')
 	request('http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=50s', function (err, res, body) {
+		// console.log('yellow status body', body)
 		assert.equal(err, null)
 		return cb()
 	})
