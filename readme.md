@@ -28,15 +28,17 @@ var mongoose = require('mongoose'),
     elmongo = require('elmongo'), 
     Schema = mongoose.Schema
 
-var Cat = new Schema({
+var CatSchema = new Schema({
     name: String
 })
 
 // add the elmongo plugin to your collection
-Cat.plugin(elmongo)
+CatSchema.plugin(elmongo)
+
+var Cat = mongoose.model('Cat', CatSchema)
 ```
 
-Now add your existing data to the search index:
+Now add your data to the search index:
 ```js
 Cat.sync(function (err) {
   // all cats are now searchable in elasticsearch
@@ -71,7 +73,7 @@ After the initial `.sync()`, any **Cat** models you create/edit/delete with mong
 
 ##`Model.sync(callback)`
 
-Re-indexes your collection's data in Elasticsearch. You can call this at any time and expect all your collection's data to be available for search once `callback` is called. This is done with zero downtime, so you can keep making search queries even while `.sync()` is running, and your data will be there.
+Re-indexes your collection's data in Elasticsearch. After the first `.sync()` call, Elasticsearch will be all setup with your collection's data. You can re-index your data anytime using this function. Re-indexing is done with zero downtime, so you can keep making search queries even while `.sync()` is running, and your existing data will be searchable.
 
 Example:
 ```js
