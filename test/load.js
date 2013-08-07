@@ -147,7 +147,7 @@ describe('elmongo load tests', function () {
 						testHelper.saveDocs(cat, function (err) {
 							updated++
 
-							if (!(updated%100))
+							if (!(updated%500))
 								console.log('updated %s cats', updated)
 
 							return catNext()
