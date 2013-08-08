@@ -6,7 +6,7 @@ var mongoose = require('mongoose'),
 	async = require('async'),
 	util = require('util'),
 	elmongo = require('../lib/elmongo'),
-	testHelper = require('./helper')
+	testHelper = require('./testHelper')
 
 // connect to DB
 var connStr = 'mongodb://localhost/elmongo-test'

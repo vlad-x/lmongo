@@ -1,5 +1,5 @@
 var assert = require('assert'),
-	testHelper = require('./helper'),
+	testHelper = require('./testHelper'),
 	models = require('./models'),
 	async = require('async'),
 	mongodb = require('mongodb'),

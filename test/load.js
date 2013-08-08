@@ -11,7 +11,7 @@ var mongoose = require('mongoose'),
 	ObjectID = mongodb.ObjectID,
 	util = require('util'),
 	elmongo = require('../lib/elmongo'),
-	testHelper = require('./helper')
+	testHelper = require('./testHelper')
 
 var connStr = 'mongodb://localhost/elmongo-test'
 
