@@ -116,9 +116,9 @@ Suppose you have a test database and a development database both storing models 
 For tests, you could do something like:
  ```js
 Cat.plugin(elmongo, { host: 'localhost', port: 9200, prefix: 'test' })
- ```js
+ ```
 And for development you could do something like:
-```
+```js
 Cat.plugin(elmongo, { host: 'localhost', port: 9200, prefix: 'development' })
 ```
 
