@@ -57,6 +57,11 @@ Cat.search({ query: 'Sphinxx', fuzziness: 0.5 }, function (err, results) {
 	// ...
 })
 
+// Search in specific fields
+Cat.search({ query: 'Siameez', fuzziness: 0.5, fields: [ 'breed'] }, function (err, results) {
+    // ...
+})
+
 // Paginate through the data
 Cat.search({ query: '*', page: 1, pageSize: 25 }, function (err, results) {
  	// ...
