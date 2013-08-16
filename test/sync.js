@@ -11,9 +11,9 @@ var assert = require('assert'),
 var connStr = 'mongodb://localhost/elmongo-test'
 
 /**
- * 
+ *
  * Basic Model.sync() sanity test. Load tests for `.sync()` are done in load.js
- * 
+ *
  */
 describe('Model.sync()', function () {
 	before(function (done) {
@@ -98,7 +98,7 @@ describe('Model.sync()', function () {
 					var firstResult = results.hits[0]
 
 					assert(firstResult)
-					assert.equal(firstResult.name, 'nomnom')
+					assert.equal(firstResult._source.name, 'nomnom')
 
 					return next()
 				})

@@ -16,7 +16,7 @@ var connStr = 'mongodb://localhost/elmongo-test'
  * Basic tests for Elmongo functionality - load tests are done in load.js
  *
  */
-describe.only('elmongo plugin', function () {
+describe('elmongo plugin', function () {
 
 	// array of test cat models that tests in this suite share
 	var testCats = [];

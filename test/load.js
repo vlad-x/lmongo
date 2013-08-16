@@ -16,9 +16,9 @@ var mongoose = require('mongoose'),
 var connStr = 'mongodb://localhost/elmongo-test'
 
 /**
- * 
+ *
  * Elmongo load tests - ensure functionality and correctness during mass inserts, updates and re-indexing
- * 
+ *
  */
 describe('elmongo load tests', function () {
 
@@ -178,20 +178,21 @@ describe('elmongo load tests', function () {
 					assert.equal(results.hits.length, numDocs)
 
 					results.hits.forEach(function (hit) {
-						assert(hit._id)
+						assert(hit._source)
+						assert(hit._source._id)
 
-						if (!catUpdateCache[hit._id]) {
+						if (!catUpdateCache[hit._source._id]) {
 							console.log('search result not found in catCache. search result:', util.inspect(hit, true, 10, true))
 						}
 
-						assert(catUpdateCache[hit._id])
-						assert.equal(catUpdateCache[hit._id].name, hit.name)
+						assert(catUpdateCache[hit._source._id])
+						assert.equal(catUpdateCache[hit._source._id].name, hit._source.name)
 
 						// delete the `catCache` entry for this hit, so we will error out if we have duplicate search results
-						delete catUpdateCache[hit._id]
+						delete catUpdateCache[hit._source._id]
 					})
 
-					return next()				
+					return next()
 				})
 			}
 		}, done)
