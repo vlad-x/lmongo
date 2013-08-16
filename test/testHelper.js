@@ -1,7 +1,7 @@
 /**
- * 
+ *
  * Helper functions for tests
- * 
+ *
  */
 var assert = require('assert'),
 	util = require('util'),
@@ -11,7 +11,7 @@ var assert = require('assert'),
 
 /**
  * Force a refresh on all indices so we an expect elasticsearch to be up-to-date
- * 
+ *
  * @param  {Function} cb
  */
 exports.refresh = function (cb) {
@@ -34,7 +34,7 @@ exports.waitForYellowStatus = function (cb) {
 
 /**
  * Assert that `err` is null, output a helpful error message if not.
- * 
+ *
  * @param  {Any type} err
  */
 exports.assertErrNull = function (err) {
@@ -44,7 +44,7 @@ exports.assertErrNull = function (err) {
 
 /**
  * Save a Mongoose document, or an Array of them, call `cb` on completion.
- * 
+ *
  * @param  {Array|Object}   docs
  * @param  {Function} cb
  */
@@ -65,12 +65,12 @@ exports.saveDocs = function (docs, cb) {
 
 				return docNext(error)
 			}
-			
+
 			return docNext()
 		})
 
 		doc.save(function (err) {
-			if (err) { 
+			if (err) {
 				return docNext(err)
 			}
 		})
@@ -79,7 +79,7 @@ exports.saveDocs = function (docs, cb) {
 
 /**
  * Remove a Mongoose document, or an Array of them, call `cb` on completion.
- * 
+ *
  * @param  {Array|Object}   docs
  * @param  {Function} cb
  */
@@ -100,12 +100,12 @@ exports.removeDocs = function (docs, cb) {
 
 				return docNext(error)
 			}
-			
+
 			return docNext()
 		})
 
 		doc.remove(function (err) {
-			if (err) { 
+			if (err) {
 				return docNext(err)
 			}
 		})
@@ -134,13 +134,13 @@ exports.insertNDocs = function (n, model, cb) {
 
 /**
  * Drop all test collections from the DB, call `cb` on completion.
- * 
+ *
  * @param  {Function} cb
  */
 exports.dropCollections = function (cb) {
 
 	// drop all collections from `models` in parallel
-	var deletionFns = Object.keys(models).map(function (modelName) {
+	var deletionFns = [ 'Cat', 'Person' ].map(function (modelName) {
 		var model = models[modelName];
 
 		return function (modelNext) {
