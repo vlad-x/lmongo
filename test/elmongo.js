@@ -178,10 +178,38 @@ describe.only('elmongo plugin', function () {
 				})
 			},
 			cleanup: function (next) {
-				testHelper.removeDocs([ testCat ], next)
+				testHelper.removeDocs([ testCat, testPerson ], next)
 			},
-			refreshIndex: testHelper.refresh
+			refreshIndex: testHelper.refresh,
+			waitForYellowStatus: testHelper.waitForYellowStatus
 		}, done)
+	})
+
+	it('autocomplete behavior should work on a schema field with autocomplete: true', function (done) {
+
+		var queries = [ 'M', 'Ma', 'Man', 'Mang', 'Mango' ];
+
+		var searchFns = queries.map(function (query) {
+			return function (next) {
+				models.Cat.search({ query: query, fields: [ 'name' ] }, function (err, results) {
+					testHelper.assertErrNull(err)
+
+					// console.log('results', util.inspect(results, true, 10, true))
+
+					assert.equal(results.total, 1)
+					assert.equal(results.hits.length, 1)
+
+					var firstResult = results.hits[0];
+
+					assert(firstResult)
+					assert.equal(firstResult._source.name, 'Mango')
+
+					return next()
+				})
+			}
+		})
+
+		async.series(searchFns, done)
 	})
 
 	it('creating a cat model instance and editing properties should be reflected in Model.search()', function (done) {
