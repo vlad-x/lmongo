@@ -114,9 +114,9 @@ Gives your collection `.search()` and `.sync()` methods, and keeps Elasticsearch
 Suppose you have a test database and a development database both storing models in the `Cats` collection, but you want them to share one Elasticsearch instance. With the `prefix` option, you can separate out the indices used by `elmongo` to store your data for test and development.
 
 For tests, you could do something like:
- ```
+ ```js
 Cat.plugin(elmongo, { host: 'localhost', port: 9200, prefix: 'test' })
- ```
+ ```js
 And for development you could do something like:
 ```
 Cat.plugin(elmongo, { host: 'localhost', port: 9200, prefix: 'development' })
