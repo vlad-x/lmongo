@@ -177,7 +177,7 @@ Cat.sync(function (err, numSynced) {
 Now you have autocomplete on `name` and `nicknames` whenever you search on those fields:
 ```js
 Cat.search({ query: 'si', fields: [ 'name' ] }, function (err, searchResults) {
-    // any other cats with names starting with 'si' will show up in the search results
+    // any cats having a name starting with 'si' will show up in the search results
 })
 ```
 
