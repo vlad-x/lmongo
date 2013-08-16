@@ -12,7 +12,7 @@ var mongoose = require('mongoose'),
 */
 
 var Cat = new Schema({
-	name: { type: String },
+	name: { type: String, autocomplete: true },
 	age: { type: Number },
 	breed: { type: String },
 	toys: [ { type: String } ],
