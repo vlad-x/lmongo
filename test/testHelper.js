@@ -4,7 +4,7 @@
  *
  */
 var assert = require('assert'),
-	util = require('util'),
+    util = require('util'),
 	request = require('request'),
 	async = require('async'),
 	models = require('./models')
@@ -20,6 +20,31 @@ exports.refresh = function (cb) {
 		var parsedBody = JSON.parse(body)
 		assert.equal(parsedBody.ok, true)
 		return cb()
+	})
+}
+
+exports.deleteIndices = function (cb) {
+	var indicesToDelete = [ 'Cat', 'Person' ].map(function (key) {
+		var model = models[key];
+
+		return model.collection.name.toLowerCase()
+	})
+
+	var deleteUri = 'http://localhost:9200/'+indicesToDelete.join(',')
+
+	// console.log('deleteUri', deleteUri)
+
+	var reqOpts = {
+	    method: 'DELETE',
+	    json: true,
+	    url: deleteUri
+	}
+
+	request(reqOpts, function (err, res, body) {
+	    assert.equal(err, null)
+	    assert(body.ok || body.status === 404)
+
+	    return cb()
 	})
 }
 
@@ -150,11 +175,24 @@ exports.dropCollections = function (cb) {
 					return modelNext(err)
 				}
 
+				if (!documents || !documents.length) {
+					return modelNext()
+				}
+
+				var numDocs = documents.length
+				var numDeleted = 0
+
 				documents.forEach(function (doc) {
+					doc.once('elmongo-unindexed', function (esearchBody) {
+						numDeleted++
+
+						if (numDeleted === numDocs) {
+							return modelNext()
+						}
+					})
+
 					doc.remove()
 				})
-
-				return modelNext()
 			})
 		}
 	})
