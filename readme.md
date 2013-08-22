@@ -25,7 +25,7 @@ npm install elmongo
 #Usage
 ```js
 var mongoose = require('mongoose'),
-    elmongo = require('elmongo'), 
+    elmongo = require('elmongo'),
     Schema = mongoose.Schema
 
 var CatSchema = new Schema({
@@ -38,10 +38,11 @@ CatSchema.plugin(elmongo)
 var Cat = mongoose.model('Cat', CatSchema)
 ```
 
-Now add your data to the search index:
+Now setup the search index with your data:
 ```js
-Cat.sync(function (err) {
+Cat.sync(function (err, numSynced) {
   // all cats are now searchable in elasticsearch
+  console.log('number of cats synced:', numSynced)
 })
 ```
 
@@ -54,6 +55,11 @@ Cat.search({ query: 'simba' }, function (err, results) {
 // Perform a fuzzy search
 Cat.search({ query: 'Sphinxx', fuzziness: 0.5 }, function (err, results) {
 	// ...
+})
+
+// Search in specific fields
+Cat.search({ query: 'Siameez', fuzziness: 0.5, fields: [ 'breed'] }, function (err, results) {
+    // ...
 })
 
 // Paginate through the data
@@ -77,8 +83,9 @@ Re-indexes your collection's data in Elasticsearch. After the first `.sync()` ca
 
 Example:
 ```js
-Cat.sync(function (err) {
+Cat.sync(function (err, numSynced) {
 	// all existing data in the `cats` collection is searchable now
+    console.log('number of docs synced:', numSynced)
 })
 ```
 
@@ -102,6 +109,22 @@ Gives your collection `.search()` and `.sync()` methods, and keeps Elasticsearch
 
  * `host` - the host that Elasticsearch is running on (defaults to `localhost`)
  * `port` - the port that Elasticsearch is listening on (defaults to `9200`)
+ * `prefix` - adds a prefix to the model's search index, allowing you to have separate indices for the same collection on an Elasticsearch instance (defaults to no prefix)
+
+Suppose you have a test database and a development database both storing models in the `Cats` collection, but you want them to share one Elasticsearch instance. With the `prefix` option, you can separate out the indices used by `elmongo` to store your data for test and development.
+
+For tests, you could do something like:
+ ```js
+Cat.plugin(elmongo, { host: 'localhost', port: 9200, prefix: 'test' })
+ ```
+And for development you could do something like:
+```js
+Cat.plugin(elmongo, { host: 'localhost', port: 9200, prefix: 'development' })
+```
+
+This way, you can use the same `mongoose` collections for test and for development, and you will have separate search indices for them (so you won't have situations like test data showing up in development search results).
+
+**Note**: there is no need to specify a `prefix` if you are using separate Elasticsearch hosts or ports. The `prefix` is simply for cases where you are sharing a single Elasticsearch instance for multiple codebases.
 
 ##`elmongo.search(searchOptions, callback)`
 
@@ -117,13 +140,46 @@ By default, `elmongo.search()` will use `localhost:9200` (the default Elasticsea
 
 ##`elmongo.search.config(options)`
 
-Configure the Elasticsearch url that `elmongo` uses to perform a search when `elmongo.search()` is used. This has no effect on the configuration for individual collections - to configure the url for collections, use `Model.plugin()`.
+Configure the Elasticsearch url that `elmongo` uses to perform a search when `elmongo.search()` is used. `options` can specify the same keys as `Model.plugin(elmongo, options)`. `elmongo.search.config()` has no effect on the configuration for individual collections - to configure the url for collections, use `Model.plugin()`.
 
 Example:
 ```js
 elmongo.search.config({ host: something.com, port: 9300 })
 ```
 
+#Autocomplete
+
+To add autocomplete functionality to your models, specify which fields you want autocomplete on in the schema:
+```js
+var CatSchema = new Schema({
+    name: { type: String, autocomplete: true },
+    age: { type: Number },
+    owner: { type: ObjectId, ref: 'Person' },
+    nicknames: [ { type: String, autocomplete: true } ]
+})
+
+// add the elmongo plugin to your collection
+CatSchema.plugin(elmongo)
+
+var Cat = mongoose.model('Cat', CatSchema)
+
+var kitty = new Cat({ name: 'simba' }).save()
+```
+
+Setup the search index using `.sync()`:
+```js
+Cat.sync(function (err, numSynced) {
+  // all cats are now searchable in elasticsearch
+  console.log('number of cats synced:', numSynced)
+})
+```
+
+Now you have autocomplete on `name` and `nicknames` whenever you search on those fields:
+```js
+Cat.search({ query: 'si', fields: [ 'name' ] }, function (err, searchResults) {
+    // any cats having a name starting with 'si' will show up in the search results
+})
+```
 
 -------
 
@@ -135,7 +191,7 @@ npm test
 
 -------
 
-## License 
+## License
 
 (The MIT License)
 

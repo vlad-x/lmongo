@@ -12,21 +12,35 @@ var mongoose = require('mongoose'),
 */
 
 var Cat = new Schema({
-	name: { type: String },
+	name: { type: String, autocomplete: true },
 	age: { type: Number },
 	breed: { type: String },
 	toys: [ { type: String } ],
-	owner: { type: ObjectId, ref: 'Person' }
+	owner: { type: ObjectId, ref: 'Person' },
+	nicknames: [ { type: String, autocomplete: true } ],
+	friends: [ { type: ObjectId, ref: 'Cat' } ],
+	isHappy: { type: Boolean }
 })
 
 Cat.plugin(elmongo)
 
 var Person = new Schema({
 	name: { type: String },
-	email: { type: String }
+	email: { type: String },
+	siblings: {
+		brothers: [ { type: ObjectId, ref: 'Person' } ],
+		sisters: [ { type: ObjectId, ref: 'Person' } ],
+	},
+	parents: {
+		mother: { type: ObjectId, ref: 'Person' },
+		father: { type: ObjectId, ref: 'Person' }
+	}
 })
 
 Person.plugin(elmongo)
 
 exports.Cat = mongoose.model('Cat', Cat)
+exports.CatSchema = Cat
+
 exports.Person = mongoose.model('Person', Person)
+exports.PersonSchema = Person

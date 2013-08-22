@@ -12,9 +12,9 @@ var mongoose = require('mongoose'),
 var connStr = 'mongodb://localhost/elmongo-test'
 
 /**
- * 
+ *
  * Basic tests for Elmongo functionality - load tests are done in load.js
- * 
+ *
  */
 describe('elmongo plugin', function () {
 
@@ -114,8 +114,11 @@ describe('elmongo plugin', function () {
 
 					assert.equal(results.total, 1)
 					assert.equal(results.hits.length, 1)
-					assert(results.hits[0])
-					assert.equal(results.hits[0].name, 'simba')
+
+					var firstResult = results.hits[0];
+
+					assert(firstResult)
+					assert.equal(firstResult._source.name, 'simba')
 
 					return next()
 				})
@@ -125,6 +128,88 @@ describe('elmongo plugin', function () {
 			},
 			refreshIndex: testHelper.refresh
 		}, done)
+	})
+
+	it('after creating a cat model instance with a `Person` ref, and populating it, serializes properly', function (done) {
+		var testCat = null, testPerson = null
+
+		async.series({
+			addCat: function (next) {
+				testPerson = new models.Person({
+					name: 'Tolga',
+					email: 'foo@bar.com'
+				})
+
+				testCat = new models.Cat({
+					name: 'populateTest',
+					age: 11,
+					owner: testPerson
+				})
+
+				testHelper.saveDocs([ testCat, testPerson ], next)
+			},
+			populateCat: function (next) {
+				models.Cat.findById(testCat._id, function (err, foundTestCat) {
+					models.Cat.populate(foundTestCat, { path: 'owner' }, function (err, populatedCat) {
+						testHelper.assertErrNull(err)
+
+						assert.equal(populatedCat.owner.name, testPerson.name)
+						assert.equal(populatedCat.owner.email, testPerson.email)
+
+						testHelper.saveDocs([ populatedCat ], next)
+					})
+				})
+			},
+			refreshIndex: testHelper.refresh,
+			doSearch: function (next) {
+				// search to make sure the cat got indexed
+				models.Cat.search({ query: 'populateTest' }, function (err, results) {
+					testHelper.assertErrNull(err)
+
+					assert.equal(results.total, 1)
+					assert.equal(results.hits.length, 1)
+
+					var firstResult = results.hits[0]
+					assert(firstResult)
+					assert.equal(firstResult._source.name, 'populateTest')
+					assert.equal(firstResult._source.owner, testPerson.id)
+
+					return next()
+				})
+			},
+			cleanup: function (next) {
+				testHelper.removeDocs([ testCat, testPerson ], next)
+			},
+			refreshIndex: testHelper.refresh,
+			waitForYellowStatus: testHelper.waitForYellowStatus
+		}, done)
+	})
+
+	it('autocomplete behavior should work on a schema field with autocomplete: true', function (done) {
+
+		var queries = [ 'M', 'Ma', 'Man', 'Mang', 'Mango' ];
+
+		var searchFns = queries.map(function (query) {
+			return function (next) {
+				models.Cat.search({ query: query, fields: [ 'name' ] }, function (err, results) {
+					testHelper.assertErrNull(err)
+
+					// console.log('results', util.inspect(results, true, 10, true))
+
+					assert.equal(results.total, 1)
+					assert.equal(results.hits.length, 1)
+
+					var firstResult = results.hits[0];
+
+					assert(firstResult)
+					assert.equal(firstResult._source.name, 'Mango')
+
+					return next()
+				})
+			}
+		})
+
+		async.series(searchFns, done)
 	})
 
 	it('creating a cat model instance and editing properties should be reflected in Model.search()', function (done) {
@@ -149,8 +234,11 @@ describe('elmongo plugin', function () {
 
 					assert.equal(results.total, 1)
 					assert.equal(results.hits.length, 1)
-					assert(results.hits[0])
-					assert.equal(results.hits[0].name, 'Tolga')
+
+					var firstResult = results.hits[0];
+
+					assert(firstResult)
+					assert.equal(firstResult._source.name, 'Tolga')
 
 					return next()
 				})
@@ -184,9 +272,9 @@ describe('elmongo plugin', function () {
 						var firstResult = results.hits[0]
 
 						assert(firstResult)
-						assert.equal(firstResult.name, 'Tolga')
-						assert.equal(firstResult.age, 7)
-						assert.equal(firstResult.breed, 'bengal')
+						assert.equal(firstResult._source.name, 'Tolga')
+						assert.equal(firstResult._source.age, 7)
+						assert.equal(firstResult._source.breed, 'bengal')
 
 						return next()
 					})
@@ -197,6 +285,8 @@ describe('elmongo plugin', function () {
 			refreshIndex: testHelper.refresh
 		}, done)
 	})
+
+
 
 	it('creating a cat model instance and updating an array property should be reflected in Model.search()', function (done) {
 
@@ -223,7 +313,7 @@ describe('elmongo plugin', function () {
 					assert.equal(results.total, 1)
 					assert.equal(results.hits.length, 1)
 					assert(results.hits[0])
-					assert.equal(results.hits[0].name, 'Tolga')
+					assert.equal(results.hits[0]._source.name, 'Tolga')
 
 					return next()
 				})
@@ -257,8 +347,8 @@ describe('elmongo plugin', function () {
 						var firstResult = results.hits[0]
 
 						assert(firstResult)
-						assert.equal(firstResult.name, 'Tolga')
-						assert.deepEqual(firstResult.toys, testToys)
+						assert.equal(firstResult._source.name, 'Tolga')
+						assert.deepEqual(firstResult._source.toys, testToys)
 
 						return next()
 					})
@@ -321,7 +411,7 @@ describe('elmongo plugin', function () {
 			var firstResult = results.hits[0]
 
 			assert(firstResult)
-			assert.equal(firstResult.name, 'Mango')
+			assert.equal(firstResult._source.name, 'Mango')
 
 			return done()
 		})
@@ -337,7 +427,7 @@ describe('elmongo plugin', function () {
 			assert.equal(results.hits.length, siameseTestCats.length)
 
 			assert(results.hits.every(function (hit) {
-				return hit.breed === 'siamese'
+				return hit._source.breed === 'siamese'
 			}))
 
 			return done()
@@ -354,8 +444,8 @@ describe('elmongo plugin', function () {
 			var firstResult = results.hits[0]
 
 			assert(firstResult)
-			assert.equal(firstResult.name, 'Siamese')
-			assert.equal(firstResult.breed, 'persian')
+			assert.equal(firstResult._source.name, 'Siamese')
+			assert.equal(firstResult._source.breed, 'persian')
 
 			return done()
 		})
@@ -378,7 +468,7 @@ describe('elmongo plugin', function () {
 			var firstResult = results.hits[0]
 
 			assert(firstResult)
-			assert.equal(firstResult.age, 10)
+			assert.equal(firstResult._source.age, 10)
 
 			return done()
 		})
@@ -403,9 +493,9 @@ describe('elmongo plugin', function () {
 			var firstResult = results.hits[0]
 
 			assert(firstResult)
-			assert.equal(firstResult.age, 15)
-			assert.equal(firstResult.breed, 'siamese')
-			assert.equal(firstResult.name, 'Mango')
+			assert.equal(firstResult._source.age, 15)
+			assert.equal(firstResult._source.breed, 'siamese')
+			assert.equal(firstResult._source.name, 'Mango')
 
 			return done()
 		})
@@ -428,9 +518,9 @@ describe('elmongo plugin', function () {
 			var firstResult = results.hits[0]
 
 			assert(firstResult)
-			assert.equal(firstResult.age, 15)
-			assert.equal(firstResult.breed, 'siamese')
-			assert.equal(firstResult.name, 'Mango')
+			assert.equal(firstResult._source.age, 15)
+			assert.equal(firstResult._source.breed, 'siamese')
+			assert.equal(firstResult._source.name, 'Mango')
 
 			return done()
 		})

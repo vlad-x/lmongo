@@ -1,5 +1,5 @@
 /**
- * 		Load tests for elmongo to ensure sanity during lots of load
+ *     	Load tests for elmongo to ensure sanity during lots of load
  */
 var mongoose = require('mongoose'),
 	Schema = mongoose.schema,
@@ -16,9 +16,9 @@ var mongoose = require('mongoose'),
 var connStr = 'mongodb://localhost/elmongo-test'
 
 /**
- * 
+ *
  * Elmongo load tests - ensure functionality and correctness during mass inserts, updates and re-indexing
- * 
+ *
  */
 describe('elmongo load tests', function () {
 
@@ -28,9 +28,13 @@ describe('elmongo load tests', function () {
 				mongoose.connect(connStr, next)
 			},
 			dropCollections: testHelper.dropCollections,
+			deleteIndices: testHelper.deleteIndices,
+			refresh: testHelper.refresh,
+			waitForYellowStatus: testHelper.waitForYellowStatus,
 			checkSearchRunning: function (next) {
 				// make sure elasticsearch is running
 				request('http://localhost:9200', function (err, res, body) {
+					// console.log('err', err, 'body', body)
 					assert.equal(err, null)
 					assert(body)
 
@@ -178,21 +182,80 @@ describe('elmongo load tests', function () {
 					assert.equal(results.hits.length, numDocs)
 
 					results.hits.forEach(function (hit) {
-						assert(hit._id)
+						assert(hit._source)
+						assert(hit._source._id)
 
-						if (!catUpdateCache[hit._id]) {
+						if (!catUpdateCache[hit._source._id]) {
 							console.log('search result not found in catCache. search result:', util.inspect(hit, true, 10, true))
 						}
 
-						assert(catUpdateCache[hit._id])
-						assert.equal(catUpdateCache[hit._id].name, hit.name)
+						assert(catUpdateCache[hit._source._id])
+						assert.equal(catUpdateCache[hit._source._id].name, hit._source.name)
 
 						// delete the `catCache` entry for this hit, so we will error out if we have duplicate search results
-						delete catUpdateCache[hit._id]
+						delete catUpdateCache[hit._source._id]
 					})
 
-					return next()				
+					return next()
 				})
+			},
+			dropCollections: testHelper.dropCollections
+		}, done)
+	})
+
+	it('syncing twice should not result in duplicates', function (done) {
+		var numDocs = 10*1000
+
+		// set timeout of 60s for this test
+		this.timeout(60*1000)
+
+		function reindexWhileSearching (next) {
+			var searchesPassed = 0
+
+			// perform a search query every 50ms during reindexing
+			var interval = setInterval(function () {
+				models.Cat.search({ query: '*', pageSize: 25 }, function (err, results) {
+					testHelper.assertErrNull(err)
+
+					assert.equal(results.total, 10000)
+					assert.equal(results.hits.length, 25)
+					searchesPassed++
+				})
+			}, 50)
+
+			// kick off reindexing while searches are being performed
+			models.Cat.sync(function (err) {
+				testHelper.assertErrNull(err)
+
+				clearInterval(interval)
+
+				console.log('performed %s successful searches during reindexing', searchesPassed)
+
+				return next()
+			})
+		}
+
+		async.series({
+			deleteIndices: testHelper.deleteIndices,
+			syncOnce: function (next) {
+				models.Cat.sync(next)
+			},
+			insert10KCats: function (next) {
+				console.log('\nsaving %s documents to the DB', numDocs)
+				testHelper.insertNDocs(numDocs, models.Cat, next)
+			},
+			wait: function (next) {
+				// wait 3s for cluster update
+				setTimeout(next, 3000)
+			},
+			refresh: testHelper.refresh,
+			reindexWhileSearching: reindexWhileSearching,
+			reindexWhileSearchingAgain: reindexWhileSearching,
+			cleanup: function (next) {
+				async.series({
+					dropCollections: testHelper.dropCollections,
+					refreshIndex: testHelper.refresh
+				}, next)
 			}
 		}, done)
 	})
