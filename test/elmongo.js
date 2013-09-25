@@ -64,6 +64,12 @@ describe('elmongo plugin', function () {
 					age: 12
 				})
 
+				testCats[3] = new models.Cat({
+					name: 'Zing Doodle',
+					breed: 'savannah',
+					age: 20
+				})
+
 				testHelper.saveDocs(testCats, next)
 			},
 			refreshIndex: testHelper.refresh
@@ -203,6 +209,33 @@ describe('elmongo plugin', function () {
 
 					assert(firstResult)
 					assert.equal(firstResult._source.name, 'Mango')
+
+					return next()
+				})
+			}
+		})
+
+		async.series(searchFns, done)
+	})
+
+	it('autocomplete should split on spaces', function (done) {
+
+		var queries = [ 'z', 'zi', 'zin', 'zing', 'do', 'doo', 'dood', 'doodl', 'doodle' ];
+
+		var searchFns = queries.map(function (query) {
+			return function (next) {
+				models.Cat.search({ query: query, fields: [ 'name' ] }, function (err, results) {
+					testHelper.assertErrNull(err)
+
+					// console.log('results', util.inspect(results, true, 10, true))
+
+					assert.equal(results.total, 1)
+					assert.equal(results.hits.length, 1)
+
+					var firstResult = results.hits[0];
+
+					assert(firstResult)
+					assert.equal(firstResult._source.name, 'Zing Doodle')
 
 					return next()
 				})
