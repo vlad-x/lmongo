@@ -41,8 +41,13 @@ describe('Model.sync()', function () {
 
 					assert(body)
 
-					var parsedBody = JSON.parse(body)
-					assert.equal(parsedBody.ok, true)
+					try {
+						var parsedBody = JSON.parse(body)
+						assert(parsedBody.ok || parsedBody.status === 404)
+					} catch (err) {
+						console.log('error with body', body)
+						throw err
+					}
 
 					return next()
 				})
@@ -111,5 +116,9 @@ describe('Model.sync()', function () {
 			testHelper.assertErrNull(err)
 			return done()
 		})
+	})
+
+	it('sync `hetero` schema should callback without errors', function (done) {
+		return models.Hetero.sync(done)
 	})
 })
