@@ -22,8 +22,6 @@ var Cat = new Schema({
 	isHappy: { type: Boolean }
 })
 
-Cat.plugin(elmongo)
-
 var Person = new Schema({
 	name: { type: String },
 	email: { type: String },
@@ -37,10 +35,27 @@ var Person = new Schema({
 	}
 })
 
-Person.plugin(elmongo)
+// schema definition to test indexing bugs with different schema setups
+var Hetero = new Schema({
+	arrayOfNumbers: [ Number ],
+	singleNumber: Number,
+	arrayOfStrings: [ String ],
+	singleString: String,
+	arrayOfObjectIds: [ ObjectId ],
+	singleObjectId: ObjectId
+})
 
+// add elmongo plugin to each schema
+Cat.plugin(elmongo)
+Person.plugin(elmongo)
+Hetero.plugin(elmongo)
+
+// exports
 exports.Cat = mongoose.model('Cat', Cat)
 exports.CatSchema = Cat
 
 exports.Person = mongoose.model('Person', Person)
 exports.PersonSchema = Person
+
+exports.Hetero = mongoose.model('Hetero', Hetero)
+exports.HeteroSchema = Hetero
