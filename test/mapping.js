@@ -101,4 +101,26 @@ describe('elmongo mapping tests', function () {
 
         return done()
     })
+
+    it('generates correct mapping for Hetero model', function (done) {
+        var generatedMap = mapping.generateMapping(models.HeteroSchema)
+
+        assert(generatedMap.properties)
+        assert(generatedMap.properties.arrayOfNumbers)
+        assert.equal(generatedMap.properties.arrayOfNumbers.type, 'double')
+        assert(generatedMap.properties.singleNumber)
+        assert.equal(generatedMap.properties.singleNumber.type, 'double')
+        assert(generatedMap.properties.arrayOfStrings)
+        assert.equal(generatedMap.properties.arrayOfStrings.type, 'string')
+        assert(generatedMap.properties.singleString)
+        assert.equal(generatedMap.properties.singleString.type, 'string')
+        assert(generatedMap.properties.arrayOfObjectIds)
+        assert.equal(generatedMap.properties.arrayOfObjectIds.type, 'string')
+        assert(generatedMap.properties.singleObjectId)
+        assert.equal(generatedMap.properties.singleObjectId.type, 'string')
+        assert(generatedMap.properties._id)
+        assert.equal(generatedMap.properties._id.type, 'string')
+
+        return done()
+    })
 })
