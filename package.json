@@ -1,7 +1,7 @@
 {
   "name": "elmongo",
   "description": "Mongoose + Elasticsearch",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "author": "Tolga Tezel",
   "keywords": [
     "mongoose",
