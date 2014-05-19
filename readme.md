@@ -2,8 +2,9 @@
 
 ##The Power of Elasticsearch for Mongoose.
 
-
 `elmongo` is a [mongoose](http://mongoosejs.com/) plugin that integrates your data with [Elasticsearch](http://www.elasticsearch.org), to give you the full power of highly available, distributed search across your data.
+
+This fork of `elmongo` is compatible with Heroku and the Bonsai add-on.
 
 If you have [homebrew](http://brew.sh/), you can install and run Elasticsearch with this one-liner:
 

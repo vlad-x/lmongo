@@ -1,7 +1,7 @@
 {
   "name": "elmongo",
-  "description": "Mongoose + Elasticsearch",
-  "version": "0.1.15",
+  "description": "Mongoose + Elasticsearch with Heroku and Bonsai Support",
+  "version": "0.1.16",
   "author": "Tolga Tezel",
   "keywords": [
     "mongoose",
