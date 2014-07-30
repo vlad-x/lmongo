@@ -1,7 +1,7 @@
 {
-  "name": "elmongo",
+  "name": "lmongo",
   "description": "Mongoose + Elasticsearch with Heroku and Bonsai Support",
-  "version": "0.1.17",
+  "version": "0.1.18",
   "author": "Jack Hsu",
   "keywords": [
     "mongoose",
@@ -24,7 +24,7 @@
   "main": "./lib/elmongo",
   "repository": {
     "type": "git",
-    "url": "http://github.com/usesold/elmongo.git"
+    "url": "http://github.com/biztera/elmongo.git"
   },
   "scripts": {
     "test": "./node_modules/.bin/mocha -t 90000 -R spec"
