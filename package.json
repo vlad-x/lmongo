@@ -24,7 +24,7 @@
   "main": "./lib/elmongo",
   "repository": {
     "type": "git",
-    "url": "http://github.com/biztera/elmongo.git"
+    "url": "http://github.com/biztera/lmongo.git"
   },
   "scripts": {
     "test": "./node_modules/.bin/mocha -t 90000 -R spec"
