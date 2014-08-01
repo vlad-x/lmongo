@@ -84,7 +84,7 @@ describe('elmongo load tests', function () {
 
 				// perform a search query every 50ms during reindexing
 				var interval = setInterval(function () {
-					models.Cat.search({ query: '*', pageSize: 25 }, function (err, results) {
+					models.Cat.search({ query: '*', size: 25 }, function (err, results) {
 						testHelper.assertErrNull(err)
 
 						assert.equal(results.total, 10000)
@@ -175,7 +175,7 @@ describe('elmongo load tests', function () {
 
 				models
 				.Cat
-				.search({ query: '*', page: 1, pageSize: numDocs }, function (err, results) {
+				.search({ query: '*', from: 0, size: numDocs }, function (err, results) {
 					testHelper.assertErrNull(err)
 
 					assert.equal(results.total, numDocs)
@@ -214,7 +214,7 @@ describe('elmongo load tests', function () {
 
 			// perform a search query every 50ms during reindexing
 			var interval = setInterval(function () {
-				models.Cat.search({ query: '*', pageSize: 25 }, function (err, results) {
+				models.Cat.search({ query: '*', size: 25 }, function (err, results) {
 					testHelper.assertErrNull(err)
 
 					assert.equal(results.total, 10000)

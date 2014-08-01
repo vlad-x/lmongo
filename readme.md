@@ -64,7 +64,7 @@ Cat.search({ query: 'Siameez', fuzziness: 0.5, fields: [ 'breed'] }, function (e
 })
 
 // Paginate through the data
-Cat.search({ query: '*', page: 1, pageSize: 25 }, function (err, results) {
+Cat.search({ query: '*', from: 0, size: 25 }, function (err, results) {
  	// ...
 })
 
@@ -99,8 +99,8 @@ Perform a search query on your model. Any values you provide will override the d
     query: '*',
     fields: [ '_all' ],	// searches all fields by default
     fuzziness: 0.0,		// exact match by default
-    pageSize: 25,
-    page: 1
+    size: 25,
+    from: 0
 }
 ```
 
