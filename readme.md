@@ -1,10 +1,10 @@
-#`elmongo`
+#`lmongo`
 
 ##The Power of Elasticsearch for Mongoose.
 
-`elmongo` is a [mongoose](http://mongoosejs.com/) plugin that integrates your data with [Elasticsearch](http://www.elasticsearch.org), to give you the full power of highly available, distributed search across your data.
+`lmongo` is a [mongoose](http://mongoosejs.com/) plugin that integrates your data with [Elasticsearch](http://www.elasticsearch.org), to give you the full power of highly available, distributed search across your data.
 
-This fork of `elmongo` is compatible with Heroku and the Bonsai add-on.
+`lmongo` is a fork of [elmongo](https://github.com/usesold/elmongo). It is compatible with Heroku and the Bonsai add-on and provides more flexible `where` clause options.
 
 If you have [homebrew](http://brew.sh/), you can install and run Elasticsearch with this one-liner:
 
@@ -20,21 +20,21 @@ curl http://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch
 #Install
 
 ```
-npm install elmongo
+npm install lmongo
 ```
 
 #Usage
 ```js
 var mongoose = require('mongoose'),
-    elmongo = require('elmongo'),
+    lmongo = require('lmongo'),
     Schema = mongoose.Schema
 
 var CatSchema = new Schema({
     name: String
 })
 
-// add the elmongo plugin to your collection
-CatSchema.plugin(elmongo)
+// add the lmongo plugin to your collection
+CatSchema.plugin(lmongo)
 
 var Cat = mongoose.model('Cat', CatSchema)
 ```
@@ -74,7 +74,7 @@ Cat.search({ query: 'john', where: { age: 25, breed: 'siamese' } }, function (er
 })
 ```
 
-After the initial `.sync()`, any **Cat** models you create/edit/delete with mongoose will be up-to-date in Elasticsearch. Also, `elmongo` reindexes with zero downtime. This means that your data will always be available in Elasticsearch even if you're in the middle of reindexing.
+After the initial `.sync()`, any **Cat** models you create/edit/delete with mongoose will be up-to-date in Elasticsearch. Also, `lmongo` reindexes with zero downtime. This means that your data will always be available in Elasticsearch even if you're in the middle of reindexing.
 
 #API
 
@@ -104,48 +104,48 @@ Perform a search query on your model. Any values you provide will override the d
 }
 ```
 
-##`Model.plugin(elmongo[, options])`
+##`Model.plugin(lmongo[, options])`
 
-Gives your collection `.search()` and `.sync()` methods, and keeps Elasticsearch up-to-date with your data when you insert/edit/delete documents with mongoose. Takes an optional `options` object to tell `elmongo` the url that Elasticsearch is running at. In `options` you can specify:
+Gives your collection `.search()` and `.sync()` methods, and keeps Elasticsearch up-to-date with your data when you insert/edit/delete documents with mongoose. Takes an optional `options` object to tell `lmongo` the url that Elasticsearch is running at. In `options` you can specify:
 
  * `host` - the host that Elasticsearch is running on (defaults to `localhost`)
  * `port` - the port that Elasticsearch is listening on (defaults to `9200`)
  * `prefix` - adds a prefix to the model's search index, allowing you to have separate indices for the same collection on an Elasticsearch instance (defaults to no prefix)
 
-Suppose you have a test database and a development database both storing models in the `Cats` collection, but you want them to share one Elasticsearch instance. With the `prefix` option, you can separate out the indices used by `elmongo` to store your data for test and development.
+Suppose you have a test database and a development database both storing models in the `Cats` collection, but you want them to share one Elasticsearch instance. With the `prefix` option, you can separate out the indices used by `lmongo` to store your data for test and development.
 
 For tests, you could do something like:
  ```js
-Cat.plugin(elmongo, { host: 'localhost', port: 9200, prefix: 'test' })
+Cat.plugin(lmongo, { host: 'localhost', port: 9200, prefix: 'test' })
  ```
 And for development you could do something like:
 ```js
-Cat.plugin(elmongo, { host: 'localhost', port: 9200, prefix: 'development' })
+Cat.plugin(lmongo, { host: 'localhost', port: 9200, prefix: 'development' })
 ```
 
 This way, you can use the same `mongoose` collections for test and for development, and you will have separate search indices for them (so you won't have situations like test data showing up in development search results).
 
 **Note**: there is no need to specify a `prefix` if you are using separate Elasticsearch hosts or ports. The `prefix` is simply for cases where you are sharing a single Elasticsearch instance for multiple codebases.
 
-##`elmongo.search(searchOptions, callback)`
+##`lmongo.search(searchOptions, callback)`
 
 You can use this function to make searches that are not limited to a specific collection. Use this to search across one or several collections at the same time (without making multiple roundtrips to Elasticsearch). The default options are the same as for `Model.search()`, with one extra key: `collections`. It defaults to searching all collections, but you can specify an array of collections to search on.
 
 ```js
-elmongo.search({ collections: [ 'cats', 'dogs' ], query: '*' }, function (err, results) {
+lmongo.search({ collections: [ 'cats', 'dogs' ], query: '*' }, function (err, results) {
 	// ...
 })
 ```
 
-By default, `elmongo.search()` will use `localhost:9200` (the default Elasticsearch configuration). To configure it to use a different url, use `elmongo.search.config(options)`.
+By default, `lmongo.search()` will use `localhost:9200` (the default Elasticsearch configuration). To configure it to use a different url, use `lmongo.search.config(options)`.
 
-##`elmongo.search.config(options)`
+##`lmongo.search.config(options)`
 
-Configure the Elasticsearch url that `elmongo` uses to perform a search when `elmongo.search()` is used. `options` can specify the same keys as `Model.plugin(elmongo, options)`. `elmongo.search.config()` has no effect on the configuration for individual collections - to configure the url for collections, use `Model.plugin()`.
+Configure the Elasticsearch url that `lmongo` uses to perform a search when `lmongo.search()` is used. `options` can specify the same keys as `Model.plugin(lmongo, options)`. `lmongo.search.config()` has no effect on the configuration for individual collections - to configure the url for collections, use `Model.plugin()`.
 
 Example:
 ```js
-elmongo.search.config({ host: something.com, port: 9300 })
+lmongo.search.config({ host: something.com, port: 9300 })
 ```
 
 #Autocomplete
@@ -159,8 +159,8 @@ var CatSchema = new Schema({
     nicknames: [ { type: String, autocomplete: true } ]
 })
 
-// add the elmongo plugin to your collection
-CatSchema.plugin(elmongo)
+// add the lmongo plugin to your collection
+CatSchema.plugin(lmongo)
 
 var Cat = mongoose.model('Cat', CatSchema)
 
