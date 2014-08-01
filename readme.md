@@ -17,6 +17,26 @@ Or you can install Elasticsearch and run it in the background with this one-line
 curl http://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.1.zip -o temp-es.zip && unzip temp-es.zip && rm temp-es.zip && mv elasticsearch-0.90.1 ~/bin/elasticsearch && ~/bin/elasticsearch/bin/elasticsearch
 ```
 
+#Migrating to version 0.2
+
+## Pagination
+version 0.1.x
+```
+// Paginate through the data
+Cat.search({ query: '*', page: 2, pageSize: 25 }, function (err, results) {
+  // ...
+})
+```
+version 0.2.x
+```
+// Paginate through the data
+Cat.search({ query: '*', from: 25, size: 25 }, function (err, results) {
+  // ...
+})
+```
+> Note: consistent with [pagination for Elastic Search](http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/pagination.html)
+
+
 #Install
 
 ```
