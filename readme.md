@@ -4,7 +4,7 @@
 
 `lmongo` is a [mongoose](http://mongoosejs.com/) plugin that integrates your data with [Elasticsearch](http://www.elasticsearch.org), to give you the full power of highly available, distributed search across your data.
 
-`lmongo` is a fork of [elmongo](https://github.com/usesold/elmongo). It is compatible with Heroku and the Bonsai add-on and provides more flexible `where` clause options.
+`lmongo` is a fork of [elmongo](https://github.com/usesold/elmongo). It is compatible with Elastic Search 1.x and Heroku Bonsai add-on. It also provides more flexible `where` clause options.
 
 If you have [homebrew](http://brew.sh/), you can install and run Elasticsearch with this one-liner:
 
@@ -12,23 +12,18 @@ If you have [homebrew](http://brew.sh/), you can install and run Elasticsearch w
 brew install elasticsearch && elasticsearch
 ```
 
-Or you can install Elasticsearch and run it in the background with this one-liner (assuming you have a `~/bin` directory):
-```
-curl http://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.1.zip -o temp-es.zip && unzip temp-es.zip && rm temp-es.zip && mv elasticsearch-0.90.1 ~/bin/elasticsearch && ~/bin/elasticsearch/bin/elasticsearch
-```
-
 #Migrating to version 0.2
 
 ## Pagination
 version 0.1.x
-```
+```js
 // Paginate through the data
 Cat.search({ query: '*', page: 2, pageSize: 25 }, function (err, results) {
   // ...
 })
 ```
 version 0.2.x
-```
+```js
 // Paginate through the data
 Cat.search({ query: '*', from: 25, size: 25 }, function (err, results) {
   // ...
@@ -92,6 +87,11 @@ Cat.search({ query: '*', from: 0, size: 25 }, function (err, results) {
 Cat.search({ query: 'john', where: { age: 25, breed: 'siamese' } }, function (err, results) {
 	// ...
 })
+
+// The `where` clauses support `and` and `or`
+Cat.search({ query: 'john', where: { and: [{or: [{age: 25}, {breed: 'siamese'}]}, {age:30}] }, function (err, results) {
+  // ...
+})
 ```
 
 After the initial `.sync()`, any **Cat** models you create/edit/delete with mongoose will be up-to-date in Elasticsearch. Also, `lmongo` reindexes with zero downtime. This means that your data will always be available in Elasticsearch even if you're in the middle of reindexing.
@@ -128,6 +128,7 @@ Perform a search query on your model. Any values you provide will override the d
 
 Gives your collection `.search()` and `.sync()` methods, and keeps Elasticsearch up-to-date with your data when you insert/edit/delete documents with mongoose. Takes an optional `options` object to tell `lmongo` the url that Elasticsearch is running at. In `options` you can specify:
 
+ * `url` - the url that Elasticsearch is running on. If this is not passed, then the following options are used.
  * `host` - the host that Elasticsearch is running on (defaults to `localhost`)
  * `port` - the port that Elasticsearch is listening on (defaults to `9200`)
  * `prefix` - adds a prefix to the model's search index, allowing you to have separate indices for the same collection on an Elasticsearch instance (defaults to no prefix)
