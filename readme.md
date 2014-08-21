@@ -92,7 +92,15 @@ Cat.search({ query: 'john', where: { age: 25, breed: 'siamese' } }, function (er
 Cat.search({ query: 'john', where: { and: [{or: [{age: 25}, {breed: 'siamese'}]}, {age:30}] }, function (err, results) {
   // ...
 })
+
+// The `where` clause has full support for raw elastic search filters via `$raw`
+// You can also mix the high-level lmonogo filter and the low-level elastic search filter together
+Cat.search({ query: 'john', where: { and: [{age:30}, {'$raw': {not: {ids: ["53de7747bb8b38f39b7efe28"]}}}] }, function (err, results) {
+  // ...
+})
 ```
+
+> To use raw elastic search filter, please refer to [Elastic Search Filter Guide](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl-filters.html)
 
 After the initial `.sync()`, any **Cat** models you create/edit/delete with mongoose will be up-to-date in Elasticsearch. Also, `lmongo` reindexes with zero downtime. This means that your data will always be available in Elasticsearch even if you're in the middle of reindexing.
 
